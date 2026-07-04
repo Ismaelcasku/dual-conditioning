@@ -1,0 +1,5 @@
+fragment_rank	fragment_role	original_fragment_id	n_atoms	n_heavy_atoms	heavy_atom_fraction	original_atom_indices	sdf_path
+1	parent	3	7	7	0.4666666666666667	7,8,9,10,11,12,13	results/source_data/fragment_example/sample_2/fragment_01_parent.sdf
+2	secondary	0	5	5	0.3333333333333333	0,2,3,5,14	results/source_data/fragment_example/sample_2/fragment_02_secondary.sdf
+3	secondary	2	2	2	0.13333333333333333	4,6	results/source_data/fragment_example/sample_2/fragment_03_secondary.sdf
+4	secondary	1	1	1	0.06666666666666667	1	results/source_data/fragment_example/sample_2/fragment_04_secondary.sdf

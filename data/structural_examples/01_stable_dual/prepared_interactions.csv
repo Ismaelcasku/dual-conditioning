@@ -1,0 +1,5 @@
+ligand,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1,UNL1
+protein,HIS41.A,MET49.A,MET49.A,PHE140.A,PHE140.A,LEU141.A,ASN142.A,CYS145.A,HIS164.A,MET165.A,MET165.A,ARG188.A,GLN189.A,GLN189.A
+interaction,VdWContact,Hydrophobic,VdWContact,Hydrophobic,VdWContact,VdWContact,VdWContact,VdWContact,VdWContact,Hydrophobic,VdWContact,VdWContact,Hydrophobic,VdWContact
+Frame,,,,,,,,,,,,,,
+0,True,True,True,True,True,True,True,True,True,True,True,True,True,True

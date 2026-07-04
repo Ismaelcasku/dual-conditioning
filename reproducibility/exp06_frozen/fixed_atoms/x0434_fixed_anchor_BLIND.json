@@ -1,0 +1,59 @@
+{
+  "anchor_tag": "x0434",
+  "selection_blind_to_targets": true,
+  "selection_rule": "largest_ring_system_plus_one_heavy_atom_shell",
+  "selection_variables": [
+    "ring_system_size",
+    "aromatic_fraction",
+    "boundary_bonds",
+    "minimum_rdkit_index_tiebreak"
+  ],
+  "n_heavy_A": 16,
+  "n_fixed": 7,
+  "n_unfixed_original_A": 9,
+  "fixed_fraction_of_A": 0.4375,
+  "rdkit_indices_0based": [
+    1,
+    2,
+    3,
+    7,
+    10,
+    12,
+    13
+  ],
+  "rdkit_indices_1based": [
+    2,
+    3,
+    4,
+    8,
+    11,
+    13,
+    14
+  ],
+  "pdb_atom_names": [
+    "C4",
+    "C5",
+    "C6",
+    "N",
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "elements": [
+    "C",
+    "C",
+    "C",
+    "N",
+    "C",
+    "C",
+    "C"
+  ],
+  "complex_pdb": "data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_complex.pdb",
+  "ligand_sdf": "data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_ligand.sdf",
+  "pdb_residue": {
+    "chain": "A",
+    "resid": "404",
+    "icode": "",
+    "resname": "K0G"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "protein": "/work/data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_protein.pdb",
+  "ligand": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/array/x0434_x1093_seed3303_lambda100_sample3/input/x0434_x1093_seed3303_lambda100_sample3.sdf",
+  "fixed_ligand_indices": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "fixed_global_indices": [
+    4654,
+    4655,
+    4656,
+    4657,
+    4658,
+    4659,
+    4660
+  ],
+  "protein_restraint_k_kj_mol_nm2": 1000.0,
+  "warhead_restraint_k_kj_mol_nm2": 10000.0,
+  "initial_energy_kj_mol": 91460.30902159272,
+  "final_energy_kj_mol": -30333.50306360019,
+  "energy_change_kj_mol": -121793.81208519291,
+  "initial_severe_contacts_lt2A": 3,
+  "final_severe_contacts_lt2A": 0,
+  "initial_min_protein_ligand_distance_A": 1.8059307849416604,
+  "final_min_protein_ligand_distance_A": 3.164944272816941,
+  "warhead_rmsd_A": 0.16368005413435235,
+  "ligand_heavy_rmsd_A": 1.7399084581235682,
+  "prepared_complex": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/array/x0434_x1093_seed3303_lambda100_sample3/minimization/complex_prepared.pdb",
+  "minimized_complex": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/array/x0434_x1093_seed3303_lambda100_sample3/minimization/complex_minimized.pdb"
+}

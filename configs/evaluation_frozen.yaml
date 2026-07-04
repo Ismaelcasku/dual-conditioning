@@ -1,0 +1,21 @@
+schema_version: 1
+name: exp06_frozen_evaluator
+shape:
+  grid_spacing: 0.5
+  bits_per_point: TWOBITVALUE
+  vdw_scale: 0.8
+  step_size: 0.25
+  max_layers: -1
+  ignore_hydrogens: true
+  allow_protrude_reordering: true
+local_retention:
+  all_fixed_atoms_max_distance_angstrom: 0.2
+  assignment: hungarian_element_constrained
+interfragment:
+  method: legacy_minimum_ratio_pair
+  bond_ratio_threshold: 1.25
+  close_ratio_threshold: 1.75
+strict_dual:
+  connected_required: true
+  local_retention_required: true
+  global_shape: B_closer_than_A_by_tanimoto_and_protrude_distance

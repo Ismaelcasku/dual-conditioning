@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "Please cite the associated manuscript and the archived software release."
+title: "Dual conditioning: code and connectivity-aware analysis"
+type: software
+authors:
+  - family-names: "Castañón"
+    given-names: "Ismael"
+version: 0.2.0
+date-released: 2026-07-04
+repository-code: "https://github.com/Ismaelcasku/dual-conditioning"
+license: MIT
+preferred-citation:
+  type: article
+  title: "Hard local constraints dominate global shape guidance and induce fragmentation in pretrained 3D molecular diffusion"
+  authors:
+    - family-names: "Castañón"
+      given-names: "Ismael"
+  year: 2026

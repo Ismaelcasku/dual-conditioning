@@ -1,0 +1,35 @@
+{
+  "protein": "/work/data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_protein.pdb",
+  "ligand": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/gaff_smoke/inputs/x0434_x2193_seed3303_lambda20_sample7.sdf",
+  "fixed_ligand_indices": [
+    0,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "fixed_global_indices": [
+    4645,
+    4650,
+    4651,
+    4652,
+    4653,
+    4654,
+    4655
+  ],
+  "protein_restraint_k_kj_mol_nm2": 1000.0,
+  "warhead_restraint_k_kj_mol_nm2": 10000.0,
+  "initial_energy_kj_mol": 27504.797308121313,
+  "final_energy_kj_mol": -30061.398351780645,
+  "energy_change_kj_mol": -57566.19565990196,
+  "initial_severe_contacts_lt2A": 0,
+  "final_severe_contacts_lt2A": 0,
+  "initial_min_protein_ligand_distance_A": 2.989361303021097,
+  "final_min_protein_ligand_distance_A": 3.1836794526690078,
+  "warhead_rmsd_A": 0.09792446327387445,
+  "ligand_heavy_rmsd_A": 0.7932824258185864,
+  "prepared_complex": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/pilot/x0434_x2193_seed3303_lambda20_sample7/complex_prepared.pdb",
+  "minimized_complex": "/work/artifacts/validation/restrained_minimization/exp06_openmm_gaff/pilot/x0434_x2193_seed3303_lambda20_sample7/complex_minimized.pdb"
+}

@@ -1,0 +1,21 @@
+X0434_BLIND_ANCHOR_FROZEN
+selection_rule=largest_ring_system_plus_one_heavy_atom_shell
+n_heavy_A=16
+n_fixed=7
+fixed_fraction=0.438
+rdkit_indices_0based=1 2 3 7 10 12 13
+pdb_atom_names=C4 C5 C6 N C1 C2 C3
+
+CLI:
+--fix_atoms C4 C5 C6 N C1 C2 C3
+
+POST-FREEZE TARGET CHARACTERIZATION
+x1093 mean=1.043 median=1.081 max=1.393 frac<=1.7=1.000 frac<=2.5=1.000
+x2193 mean=1.834 median=1.892 max=3.155 frac<=1.7=0.429 frac<=2.5=0.714
+
+Outputs:
+artifacts/fixed_atom_screen/x0434_blind/x0434_fixed_anchor_BLIND.json
+artifacts/fixed_atom_screen/x0434_blind/x0434_anchor_target_characterization.json
+artifacts/fixed_atom_screen/x0434_blind/x0434_atom_mapping.tsv
+artifacts/fixed_atom_screen/x0434_blind/x0434_blind_anchor.png
+artifacts/fixed_atom_screen/x0434_blind/x0434_fix_atoms_cli.txt

@@ -1,0 +1,18 @@
+{
+  "anchor_file": "artifacts/fixed_atom_screen/x0434_blind/x0434_fixed_anchor_BLIND.json",
+  "anchor_selection_blind_to_targets": true,
+  "x1093": {
+    "mean_nearest_A": 1.0428954276267022,
+    "median_nearest_A": 1.080648879146228,
+    "max_nearest_A": 1.392542279429964,
+    "fraction_within_1p7A": 1.0,
+    "fraction_within_2p5A": 1.0
+  },
+  "x2193": {
+    "mean_nearest_A": 1.8338155300544605,
+    "median_nearest_A": 1.8919254742193203,
+    "max_nearest_A": 3.1549816164282167,
+    "fraction_within_1p7A": 0.42857142857142855,
+    "fraction_within_2p5A": 0.7142857142857143
+  }
+}

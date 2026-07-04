@@ -1,0 +1,16 @@
+sample2_secondary_fragment_4
+     RDKit          3D
+
+  1  0  0  0  0  0  0  0  0  0999 V2000
+   16.9260    4.4470   21.9260 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+M  END
+>  <fragment_rank>  (1) 
+4
+
+>  <fragment_role>  (1) 
+secondary
+
+>  <n_heavy_atoms>  (1) 
+1
+
+$$$$

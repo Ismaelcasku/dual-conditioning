@@ -1,0 +1,14 @@
+{
+  "shape_metric": "RDKit grid-based Shape Tanimoto",
+  "shape_similarity_definition": "1 - ShapeTanimotoDist",
+  "protrude_direction": "candidate_or_A relative to B",
+  "grid_spacing_angstrom": 0.5,
+  "bits_per_point": 1,
+  "vdw_scale": 0.8,
+  "step_size": 0.25,
+  "max_layers": -1,
+  "ignore_hydrogens": true,
+  "allow_protrude_reordering": false,
+  "alignment": "none; original crystallographic frame",
+  "warhead_rmsd_alignment": "none; mapped absolute coordinates"
+}

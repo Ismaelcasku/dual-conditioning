@@ -1,0 +1,17 @@
+rdkit_index_0based	rdkit_index_1based	element	pdb_atom_name	mapping_distance_A	is_primary_ring_core	is_fixed_anchor
+0	1	N	N1	0.0	False	False
+1	2	C	C4	0.0	True	True
+2	3	C	C5	0.0	True	True
+3	4	C	C6	0.0	True	True
+4	5	C	C7	0.0	False	False
+5	6	C	C8	0.0	False	False
+6	7	C	C10	0.0	False	False
+7	8	N	N	0.0	False	True
+8	9	C	C	0.0	False	False
+9	10	O	O	0.0	False	False
+10	11	C	C1	0.0	True	True
+11	12	C	C11	0.0	False	False
+12	13	C	C2	0.0	True	True
+13	14	C	C3	0.0	True	True
+14	15	C	C9	0.0	False	False
+15	16	N	N2	0.0	False	False

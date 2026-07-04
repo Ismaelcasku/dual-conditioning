@@ -1,0 +1,16 @@
+{
+  "experiment": "Exp06",
+  "distance_threshold_angstrom": 0.2,
+  "local_conditions": {
+    "x0434": {
+      "expected_fixed_heavy_atoms": 7,
+      "reference_ligand": "data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_ligand.sdf",
+      "protein": "data/mpro/prepared/silvr_xchem_hits/x0434__5R83_Mpro-x0434_AAR-POS-d2a4d1df-11/5R83_Mpro-x0434_AAR-POS-d2a4d1df-11_protein.pdb"
+    },
+    "x0874": {
+      "expected_fixed_heavy_atoms": 7,
+      "reference_ligand": "data/mpro/prepared/silvr_xchem_hits/x0874__5REZ_Mpro-x0874_AAR-POS-d2a4d1df-14/5REZ_Mpro-x0874_AAR-POS-d2a4d1df-14_ligand.sdf",
+      "protein": "data/mpro/prepared/silvr_xchem_hits/x0874__5REZ_Mpro-x0874_AAR-POS-d2a4d1df-14/5REZ_Mpro-x0874_AAR-POS-d2a4d1df-14_protein.pdb"
+    }
+  }
+}
