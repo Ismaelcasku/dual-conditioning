@@ -151,3 +151,43 @@ upstream MIT license. See `third_party/NOTICE.md`.
 
 Citation metadata are provided in `CITATION.cff`. Replace the placeholder
 repository URL and add the final software DOI before the tagged public release.
+
+<!-- campaign-data-start -->
+## Campaign data and Figure 3
+
+The generation campaign comprises 691 pair-specific evaluations from 649
+unique generated structures. Pair-specific records are used for shape
+measurements because these depend on the selected global reference ligand B.
+Connectivity and fragmentation are calculated from unique structures, so
+shared unguided baselines are counted only once.
+
+Of the 648 unique structures that could be chemically sanitized, 555 were
+fragmented. Their interfragment geometries were classified as:
+
+- 5 potential missing-bond configurations;
+- 299 bond-distance but valence-limited;
+- 176 close but nonbonded;
+- 75 geometrically separated.
+
+One additional fragmented structure failed kekulization and is reported
+separately. No guided structure satisfied the connected strict-dual criterion
+under either Shape Protrude convention.
+
+Figure 3 requires two tables from the associated dataset:
+
+- a pair-specific table for shape-dependent measurements;
+- a unique-structure table for connectivity and interfragment classification.
+
+The figure can be regenerated with:
+
+```bash
+export DC_FIG3_PAIR_EVAL_TSV=/path/to/per_record_directional.tsv
+export DC_FIG3_UNIQUE_TSV=/path/to/figure3_unique_structures.tsv
+
+python scripts/figures/figure3_fragmentation.py
+```
+
+The complete generated structures, audit tables, and final figure files are
+distributed with the associated dataset rather than duplicated in this
+software repository.
+<!-- campaign-data-end -->

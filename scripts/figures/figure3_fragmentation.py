@@ -1,5 +1,6 @@
 """Generate manuscript Figure 3 from the per-molecule fragmentation audit."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -17,10 +18,22 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 
-DATA_PATH = (
-    ROOT
-    / "results/source_data"
-    / "fragment_audit_per_molecule.tsv"
+PAIR_EVALUATION_PATH = Path(
+    os.environ.get(
+        "DC_FIG3_PAIR_EVAL_TSV",
+        ROOT
+        / "results/source_data"
+        / "fragment_audit_per_evaluation_directional.tsv",
+    )
+)
+
+UNIQUE_STRUCTURE_PATH = Path(
+    os.environ.get(
+        "DC_FIG3_UNIQUE_TSV",
+        ROOT
+        / "results/source_data"
+        / "fragment_audit_unique_structures.tsv",
+    )
 )
 
 FULL_RENDER = (
@@ -143,7 +156,7 @@ class_order = [
 
 class_labels = {
     "potential_missing_bond": (
-        "Potential missing bond"
+        "Potential missing-bond"
     ),
     "bond_distance_valence_limited": (
         "Valence-limited"
@@ -167,25 +180,37 @@ class_colors = {
 # ---------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------
+# Shape-dependent analyses use pair-specific evaluations because they
+# depend on the selected global reference B.
+#
+# Connectivity and interfragment classification use unique generated
+# structures because these properties are independent of B. Shared
+# unguided baselines are therefore counted only once.
+
+if not PAIR_EVALUATION_PATH.is_file():
+    raise FileNotFoundError(
+        "Pair-specific audit table not found: "
+        f"{PAIR_EVALUATION_PATH}\n"
+        "Set DC_FIG3_PAIR_EVAL_TSV to its location."
+    )
+
+if not UNIQUE_STRUCTURE_PATH.is_file():
+    raise FileNotFoundError(
+        "Unique-structure audit table not found: "
+        f"{UNIQUE_STRUCTURE_PATH}\n"
+        "Set DC_FIG3_UNIQUE_TSV to its location."
+    )
+
+
 df = pd.read_csv(
-    DATA_PATH,
+    PAIR_EVALUATION_PATH,
     sep="\t",
 )
 
-numeric_columns = [
-    "seed",
-    "lambda_global",
-    "n_heavy_fragments",
-    "parent_heavy_fraction",
-    "full_tanimoto_B",
-    "parent_tanimoto_B",
-]
-
-for column in numeric_columns:
-    df[column] = pd.to_numeric(
-        df[column],
-        errors="coerce",
-    )
+unique_df = pd.read_csv(
+    UNIQUE_STRUCTURE_PATH,
+    sep="\t",
+)
 
 
 def parse_boolean(series):
@@ -202,11 +227,32 @@ def parse_boolean(series):
                 "0": False,
             }
         )
+        .fillna(False)
+        .astype(bool)
+    )
+
+
+# Harmonize the corrected pair-specific audit schema with the names
+# used by the established plotting implementation.
+numeric_columns = [
+    "seed",
+    "lambda_global",
+    "n_heavy_components",
+    "parent_heavy_fraction",
+    "full_tanimoto_distance_to_b",
+    "parent_tanimoto_distance_to_b",
+]
+
+for column in numeric_columns:
+    df[column] = pd.to_numeric(
+        df[column],
+        errors="coerce",
     )
 
 
 for column in [
-    "audit_ok",
+    "read_ok",
+    "sanitize_ok",
     "full_shape_ok",
     "parent_shape_ok",
 ]:
@@ -214,6 +260,23 @@ for column in [
         df[column]
     )
 
+
+df["audit_ok"] = (
+    df["read_ok"]
+    & df["sanitize_ok"]
+)
+
+df["n_heavy_fragments"] = (
+    df["n_heavy_components"]
+)
+
+df["full_tanimoto_B"] = (
+    df["full_tanimoto_distance_to_b"]
+)
+
+df["parent_tanimoto_B"] = (
+    df["parent_tanimoto_distance_to_b"]
+)
 
 df["full_similarity_B"] = (
     1.0 - df["full_tanimoto_B"]
@@ -229,6 +292,7 @@ df["shape_inflation_B"] = (
 )
 
 
+# Pair-specific sanitizable evaluation records.
 auditable = df.loc[
     (df["audit_ok"] == True)
     & df["n_heavy_fragments"].notna()
@@ -250,7 +314,118 @@ shape_valid = fragmented.loc[
 ].copy()
 
 
-# Seed-level fragment counts.
+# Unique generated structures for connectivity-independent analyses.
+for column in [
+    "seed",
+    "lambda_global",
+    "n_heavy_components",
+    "parent_heavy_fraction",
+]:
+    unique_df[column] = pd.to_numeric(
+        unique_df[column],
+        errors="coerce",
+    )
+
+
+for column in [
+    "read_ok",
+    "sanitize_ok",
+    "connected",
+]:
+    unique_df[column] = parse_boolean(
+        unique_df[column]
+    )
+
+
+unique_df["n_heavy_fragments"] = (
+    unique_df["n_heavy_components"]
+)
+
+unique_auditable = unique_df.loc[
+    (unique_df["read_ok"] == True)
+    & (unique_df["sanitize_ok"] == True)
+    & unique_df["n_heavy_fragments"].notna()
+].copy()
+
+unique_fragmented = unique_auditable.loc[
+    unique_auditable["n_heavy_fragments"] > 1
+].copy()
+
+unique_non_sanitizable = unique_df.loc[
+    unique_df["sanitize_ok"] == False
+].copy()
+
+
+expected_totals = {
+    "pair_specific_evaluations": 691,
+    "sanitizable_pair_specific_evaluations": 690,
+    "fragmented_pair_specific_evaluations": 562,
+    "unique_generated_structures": 649,
+    "unique_sanitizable_structures": 648,
+    "unique_fragmented_sanitizable": 555,
+    "unique_non_sanitizable": 1,
+}
+
+observed_totals = {
+    "pair_specific_evaluations": len(df),
+    "sanitizable_pair_specific_evaluations": len(
+        auditable
+    ),
+    "fragmented_pair_specific_evaluations": len(
+        fragmented
+    ),
+    "unique_generated_structures": len(
+        unique_df
+    ),
+    "unique_sanitizable_structures": len(
+        unique_auditable
+    ),
+    "unique_fragmented_sanitizable": len(
+        unique_fragmented
+    ),
+    "unique_non_sanitizable": len(
+        unique_non_sanitizable
+    ),
+}
+
+if observed_totals != expected_totals:
+    raise RuntimeError(
+        "Unexpected corrected-audit totals.\n"
+        f"Expected: {expected_totals}\n"
+        f"Observed: {observed_totals}"
+    )
+
+
+expected_class_counts = {
+    "potential_missing_bond": 5,
+    "bond_distance_valence_limited": 299,
+    "close_nonbonded": 176,
+    "geometrically_separated": 75,
+}
+
+observed_class_counts = (
+    unique_fragmented[
+        "interfragment_class"
+    ]
+    .value_counts()
+    .reindex(
+        class_order,
+        fill_value=0,
+    )
+    .astype(int)
+    .to_dict()
+)
+
+if observed_class_counts != expected_class_counts:
+    raise RuntimeError(
+        "Unexpected fragmentation-class counts.\n"
+        f"Expected: {expected_class_counts}\n"
+        f"Observed: {observed_class_counts}"
+    )
+
+
+# Panel C remains pair-specific because it displays separate A-to-B
+# trajectories.
 seed_fragment_summary = (
     auditable
     .groupby(
@@ -291,10 +466,14 @@ fragment_summary = (
 )
 
 
-# Interfragment-class proportions.
+# Panel E uses unique generated structures.
 class_counts = pd.crosstab(
-    fragmented["lambda_global"],
-    fragmented["interfragment_class"],
+    unique_fragmented[
+        "lambda_global"
+    ],
+    unique_fragmented[
+        "interfragment_class"
+    ],
 )
 
 class_counts = (
@@ -315,7 +494,7 @@ class_proportions = class_counts.div(
 )
 
 
-# Non-parametric binned trend for panel E.
+# Panel D remains pair-specific because shape inflation depends on B.
 shape_valid["parent_fraction_bin"] = pd.qcut(
     shape_valid["parent_heavy_fraction"],
     q=7,
@@ -367,6 +546,27 @@ rho = spearman_without_scipy(
     shape_valid["shape_inflation_B"],
 )
 
+
+print(
+    "FIGURE3_PAIR_EVALUATIONS="
+    f"{len(df)}"
+)
+print(
+    "FIGURE3_PAIR_FRAGMENTED_SANITIZABLE="
+    f"{len(fragmented)}"
+)
+print(
+    "FIGURE3_UNIQUE_STRUCTURES="
+    f"{len(unique_df)}"
+)
+print(
+    "FIGURE3_UNIQUE_FRAGMENTED_SANITIZABLE="
+    f"{len(unique_fragmented)}"
+)
+print(
+    "FIGURE3_FRAGMENTATION_CLASSES="
+    f"{observed_class_counts}"
+)
 
 # ---------------------------------------------------------------------
 # Structural image preparation
@@ -973,7 +1173,7 @@ ax_d.set_xlabel(
 )
 
 ax_d.set_ylabel(
-    "Fragmented records"
+    "Unique fragmented structures"
 )
 
 ax_d.set_ylim(
@@ -1252,8 +1452,22 @@ fig.savefig(
 plt.close(fig)
 
 print("FIGURE3_FRAGMENTATION_STATUS=OK")
-print(f"Fragmented records: {len(fragmented)}")
-print(f"Shape-valid fragmented records: {len(shape_valid)}")
+print(
+    "Fragmented pair-specific evaluations: "
+    f"{len(fragmented)}"
+)
+print(
+    "Unique fragmented sanitizable structures: "
+    f"{len(unique_fragmented)}"
+)
+print(
+    "Unique fragmentation classes: "
+    f"{observed_class_counts}"
+)
+print(
+    "Shape-valid fragmented evaluations: "
+    f"{len(shape_valid)}"
+)
 print(f"Spearman rho: {rho:.4f}")
 print(base.with_suffix(".png"))
 print(base.with_suffix(".pdf"))
