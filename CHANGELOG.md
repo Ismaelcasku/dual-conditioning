@@ -1,8 +1,7 @@
 # Changelog
 
 
-## Unreleased
-
+## [1.0.0] - 2026-07-05
 ### Changed
 
 - Updated Figure 3 generation to distinguish pair-specific evaluations from unique structures.

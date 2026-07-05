@@ -5,8 +5,7 @@ type: software
 authors:
   - family-names: "Castañón"
     given-names: "Ismael"
-version: 0.2.0
-date-released: 2026-07-04
+version: 1.0.0
 repository-code: "https://github.com/Ismaelcasku/dual-conditioning"
 license: MIT
 preferred-citation:
@@ -16,3 +15,4 @@ preferred-citation:
     - family-names: "Castañón"
       given-names: "Ismael"
   year: 2026
+date-released: 2026-07-05

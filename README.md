@@ -155,6 +155,8 @@ repository URL and add the final software DOI before the tagged public release.
 <!-- campaign-data-start -->
 ## Campaign data and Figure 3
 
+Associated dataset: [10.5281/zenodo.21204994](https://doi.org/10.5281/zenodo.21204994)
+
 The generation campaign comprises 691 pair-specific evaluations from 649
 unique generated structures. Pair-specific records are used for shape
 measurements because these depend on the selected global reference ligand B.
