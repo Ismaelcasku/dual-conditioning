@@ -1,5 +1,7 @@
 # Hard local constraints dominate global shape guidance in 3D molecular diffusion
 
+[![Software DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21206298.svg)](https://doi.org/10.5281/zenodo.21206298)
+
 Code, frozen experiment metadata, connectivity-aware re-audit tools, and figure
 source material for the study:
 
@@ -154,6 +156,8 @@ repository URL and add the final software DOI before the tagged public release.
 
 <!-- campaign-data-start -->
 ## Campaign data and Figure 3
+
+**Associated dataset:** [10.5281/zenodo.21204994](https://doi.org/10.5281/zenodo.21204994)
 
 Associated dataset: [10.5281/zenodo.21204994](https://doi.org/10.5281/zenodo.21204994)
 
