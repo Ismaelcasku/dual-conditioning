@@ -1,7 +1,0 @@
-canonical_path	historical_local_filename
-scripts/figures/figure1_protocol.py	figure1_dual_conditioning_protocol_v2.py
-scripts/figures/figure2_generation_outcomes.py	figure_all_generation_outcomes.py
-scripts/figures/figure3_fragmentation.py	figure3_fragmentation_mechanism_v6.py
-scripts/figures/figure4_relaxation_outcome_map.py	figure5A_shape_anchor.py
-scripts/figures/figure5_structural_examples.py	figure_structural_regimes.py
-scripts/figures/supp_pair_compatibility.py	figure_pair_compatibility.py
