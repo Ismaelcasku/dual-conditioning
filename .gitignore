@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local configuration and credentials
+config/paths.env
+.env
+
+# Generated model/runtime artifacts
+artifacts/
+logs/
+slurm-*.out
+slurm-*.err
+*.ckpt
+*.sif
+
+# Third-party checkout
+external/
+
+# Generated figures (scripts remain versioned)
+figures/*.png
+figures/*.pdf
+figures/*.svg
+
+# Local experimental work trees
+exp0/
+exp1/
+exp2/
+
+# Editor/OS files
+.DS_Store
+*.swp
+*.bak*

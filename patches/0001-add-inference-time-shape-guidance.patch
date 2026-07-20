@@ -1,0 +1,371 @@
+diff --git a/equivariant_diffusion/conditional_model.py b/equivariant_diffusion/conditional_model.py
+index 61fc564..be826e2 100644
+--- a/equivariant_diffusion/conditional_model.py
++++ b/equivariant_diffusion/conditional_model.py
+@@ -430,7 +430,11 @@ class ConditionalDDPM(EnVariationalDiffusion):
+         return zt_lig, xh0_pocket
+ 
+     def sample_p_zs_given_zt(self, s, t, zt_lig, xh0_pocket, ligand_mask,
+-                             pocket_mask, fix_noise=False):
++                             pocket_mask, fix_noise=False,
++                             lig_fixed=None, b_internal_uncentered=None,
++                             mean_known=None, lambda_global=0.0,
++                             guide_r_internal=1.7, guide_clip_internal=1.0,
++                             guide_space="x0", dbg_s=None, dbg_T=None):
+         """Samples from zs ~ p(zs | zt). Only used during sampling."""
+         gamma_s = self.gamma(s)
+         gamma_t = self.gamma(t)
+@@ -445,6 +449,82 @@ class ConditionalDDPM(EnVariationalDiffusion):
+         eps_t_lig, _ = self.dynamics(
+             zt_lig, xh0_pocket, t, ligand_mask, pocket_mask)
+ 
++        # --- Path 2: x0_hat-space global guidance (inert by default) ---
++        # Field selected by DC_GUIDE_FIELD: "shape" (Gaussian shape-overlap
++        # gradient toward B; Exp03 default) or "protrusion" (Exp02 B-volume).
++        # Both push the predicted clean coords (x0_hat) of NON-fixed atoms and
++        # convert the push to an epsilon correction so the mu line below is
++        # re-derived from the corrected target. Coordinate channels only.
++        # Identity (this repo's mu): eps -= (alpha_t/sigma_t)*delta  =>
++        #   mu += alpha_s * (sigma2_{t|s}/sigma_t^2) * delta.
++        _x0_guide_on = (
++            (guide_space == "x0") and (b_internal_uncentered is not None)
++            and (lambda_global != 0.0) and (lig_fixed is not None)
++            and (mean_known is not None))
++        if _x0_guide_on:
++            import os as _os
++            _dbg = _os.environ.get("DC_GUIDE_DEBUG")
++            _field = _os.environ.get("DC_GUIDE_FIELD", "shape")
++            _alpha = float(_os.environ.get("DC_GUIDE_ALPHA", "0.81"))
++            _stop_env = _os.environ.get("DC_GUIDE_STOP_STEP")
++            _stop = int(_stop_env) if (_stop_env not in (None, "")) else None
++            # early-shape / late-release: guide only while s >= stop_step
++            _guide_now = (_stop is None) or (dbg_s is None) or (dbg_s >= _stop)
++            if _guide_now:
++                _alpha_t = self.alpha(gamma_t, zt_lig)
++                _a = _alpha_t[ligand_mask]
++                _sg = sigma_t[ligand_mask]
++                _x0 = (zt_lig[:, :self.n_dims] / _a
++                       - eps_t_lig[:, :self.n_dims] * _sg / _a)
++                _unknown = (1 - lig_fixed).bool().view(-1)
++                _fixed = lig_fixed.bool().view(-1)
++                _eps_corr = eps_t_lig.clone()
++                _n_samples = mean_known.shape[0]
++                for _i in range(_n_samples):
++                    _sel = (ligand_mask == _i) & _unknown
++                    if _sel.sum() == 0:
++                        continue
++                    _x0_i = _x0[_sel]
++                    _b_i = b_internal_uncentered - mean_known[_i]
++                    if _field == "shape":
++                        from guidance.b_shape_overlap import compute_shape_overlap_guide
++                        _selfix = (ligand_mask == _i) & _fixed
++                        _x0_fix = _x0[_selfix] if int(_selfix.sum()) > 0 else None
++                        _guide = compute_shape_overlap_guide(
++                            _x0_i, _b_i, fixed_coords=_x0_fix,
++                            alpha=_alpha, clip=guide_clip_internal)
++                    else:
++                        from guidance.b_volume_protrusion import compute_b_volume_protrusion_guide
++                        _guide = compute_b_volume_protrusion_guide(
++                            _x0_i, _b_i, guide_r_internal, guide_clip_internal)
++                    if _guide.shape[0] > 0:
++                        # COM-neutral: deform shape without translating COM
++                        _guide = _guide - _guide.mean(dim=0, keepdim=True)
++                    _delta = lambda_global * _guide  # push in Angstrom on x0_hat
++                    _idx = _sel.nonzero(as_tuple=True)[0]
++                    _eps_corr[_idx, :self.n_dims] = (
++                        eps_t_lig[_idx, :self.n_dims]
++                        - (_a[_idx] / _sg[_idx]) * _delta)
++                    if (_dbg and _i == 0 and (dbg_s is not None)
++                            and dbg_s in (dbg_T - 1, dbg_T // 2, 0)):
++                        if _field == "shape":
++                            from guidance.b_shape_overlap import shape_tanimoto_overlap as _sto
++                            _t_be = _sto(_x0_i, _b_i, _x0_fix, _alpha).item()
++                            _t_af = _sto(_x0_i + _delta, _b_i, _x0_fix, _alpha).item()
++                            print(f"[GUIDE_DBG shape] s={dbg_s} "
++                                  f"push_norm_mean={_delta.norm(dim=1).mean().item():.4f} "
++                                  f"T_before={_t_be:.4f} T_after={_t_af:.4f} "
++                                  f"dT={(_t_af - _t_be):+.4f}", flush=True)
++                        else:
++                            _db = (_x0_i.unsqueeze(1) - _b_i.unsqueeze(0)).norm(dim=2).min(dim=1).values.mean()
++                            _da = ((_x0_i + _delta).unsqueeze(1) - _b_i.unsqueeze(0)).norm(dim=2).min(dim=1).values.mean()
++                            print(f"[GUIDE_DBG protrusion] s={dbg_s} "
++                                  f"push_norm_mean={_delta.norm(dim=1).mean().item():.4f} "
++                                  f"dist_to_B_before={_db.item():.4f} "
++                                  f"dist_to_B_after={_da.item():.4f} "
++                                  f"delta={(_da - _db).item():+.4f}", flush=True)
++                eps_t_lig = _eps_corr
++
+         # Compute mu for p(zs | zt).
+         # Note: mu_{t->s} = 1 / alpha_{t|s} z_t - sigma_{t|s}^2 / sigma_t / alpha_{t|s} epsilon
+         # follows from the definition of mu_{t->s} and Equ. (7) in the EDM paper
+@@ -556,7 +636,9 @@ class ConditionalDDPM(EnVariationalDiffusion):
+ 
+     @torch.no_grad()
+     def inpaint(self, ligand, pocket, lig_fixed, resamplings=1, return_frames=1,
+-                timesteps=None, center='ligand'):
++                timesteps=None, center='ligand',
++                b_cloud_raw=None, lambda_global=0.0,
++                guide_r_raw=1.7, guide_clip_raw=1.0):
+         """
+         Draw samples from the generative model while fixing parts of the input.
+         Optionally, return intermediate states for visualization purposes.
+@@ -603,6 +685,28 @@ class ConditionalDDPM(EnVariationalDiffusion):
+         mu_lig = torch.cat((mu_lig_x, mu_lig_h), dim=1)[ligand['mask']]
+         sigma = torch.ones_like(pocket['size']).unsqueeze(1)
+ 
++        # --- Global B-volume protrusion guidance (option 2a) setup ---
++        # Inert unless b_cloud_raw is provided AND lambda_global > 0.
++        # B is transformed into the SAME internal frame as ligand['x']:
++        #   divide by norm_values[0], then center per-sample on mean_known.
++        # r and clip are converted from raw Angstrom to internal units the same way.
++        use_global_guide = (b_cloud_raw is not None) and (lambda_global != 0.0)
++        import os as _os_guide
++        guide_space = _os_guide.environ.get("DC_GUIDE_SPACE", "x0")
++        # Defaults so the guided sampler call is always well-formed (inert).
++        b_internal_uncentered = None
++        guide_r_internal = guide_r_raw
++        guide_clip_internal = guide_clip_raw
++        unknown_node_mask = None
++        if use_global_guide:
++            from guidance.b_volume_protrusion import \
++                compute_b_volume_protrusion_guide
++            coord_scale = self.norm_values[0]
++            b_internal_uncentered = b_cloud_raw.to(device) / coord_scale
++            guide_r_internal = guide_r_raw / coord_scale
++            guide_clip_internal = guide_clip_raw / coord_scale
++            unknown_node_mask = (1 - lig_fixed).bool().view(-1)
++
+         z_lig, xh_pocket = self.sample_normal_zero_com(
+             mu_lig, xh0_pocket, sigma, ligand['mask'], pocket['mask'])
+ 
+@@ -631,7 +735,15 @@ class ConditionalDDPM(EnVariationalDiffusion):
+                 # sample inpainted part
+                 z_lig_unknown, xh_pocket = self.sample_p_zs_given_zt(
+                     s_array, t_array, z_lig, xh_pocket, ligand['mask'],
+-                    pocket['mask'])
++                    pocket['mask'],
++                    lig_fixed=(lig_fixed if (use_global_guide and guide_space == "x0") else None),
++                    b_internal_uncentered=(b_internal_uncentered if (use_global_guide and guide_space == "x0") else None),
++                    mean_known=(mean_known if (use_global_guide and guide_space == "x0") else None),
++                    lambda_global=(lambda_global if (use_global_guide and guide_space == "x0") else 0.0),
++                    guide_r_internal=guide_r_internal,
++                    guide_clip_internal=guide_clip_internal,
++                    guide_space=guide_space,
++                    dbg_s=s, dbg_T=timesteps)
+ 
+                 # sample known nodes from the input
+                 com_pocket = scatter_mean(xh_pocket[:, :self.n_dims],
+@@ -642,6 +754,44 @@ class ConditionalDDPM(EnVariationalDiffusion):
+                     xh_ligand, xh_pocket, ligand['mask'], pocket['mask'],
+                     gamma_s)
+ 
++                # --- Apply global B-volume guidance on the last resampling pass ---
++                # Only non-fixed nodes; fixed A atoms are reimposed by the hard
++                # mask below, so they are never modified here.
++                if use_global_guide and (guide_space == "z") and (u == resamplings - 1):
++                    import os as _os
++                    _dbg = _os.environ.get("DC_GUIDE_DEBUG")
++                    for _i in range(n_samples):
++                        _sel = (ligand['mask'] == _i) & unknown_node_mask
++                        if _sel.sum() == 0:
++                            continue
++                        _x_unknown = z_lig_unknown[_sel][:, :self.n_dims]
++                        _b_i = b_internal_uncentered - mean_known[_i]
++                        _guide = compute_b_volume_protrusion_guide(
++                            _x_unknown, _b_i,
++                            guide_r_internal, guide_clip_internal)
++                        # COM-neutral: subtract the field's own mean so the push
++                        # deforms shape WITHOUT translating COM (keeps the
++                        # COM-zero assert in sample_p_zs_given_zt satisfied).
++                        if _guide.shape[0] > 0:
++                            _guide = _guide - _guide.mean(dim=0, keepdim=True)
++                        # Constant-Angstrom push: NO sigma_step scaling. The
++                        # sigma_step factor collapsed the guide in late timesteps
++                        # (sigma->0) exactly where shape consolidates, making it
++                        # inert (confirmed: lambda 1->8 barely moved shape).
++                        # lambda_global is now the push magnitude in Angstrom/step,
++                        # capped by guide_clip.
++                        if _dbg and _i == 0 and s in (timesteps - 1, timesteps // 2, 0):
++                            _d_b = (_x_unknown.unsqueeze(1) - _b_i.unsqueeze(0)).norm(dim=2).min(dim=1).values.mean()
++                            _x_af = _x_unknown + lambda_global * _guide
++                            _d_af = (_x_af.unsqueeze(1) - _b_i.unsqueeze(0)).norm(dim=2).min(dim=1).values.mean()
++                            print(f"[GUIDE_DBG] s={s} "
++                                  f"applied_norm_mean={(lambda_global*_guide).norm(dim=1).mean().item():.4f} "
++                                  f"dist_to_B_before={_d_b.item():.4f} "
++                                  f"dist_to_B_after={_d_af.item():.4f} "
++                                  f"delta={(_d_af-_d_b).item():+.4f}", flush=True)
++                        _idx = _sel.nonzero(as_tuple=True)[0]
++                        z_lig_unknown[_idx, :self.n_dims] = _x_unknown + lambda_global * _guide
++
+                 # move center of mass of the noised part to the center of mass
+                 # of the corresponding denoised part before combining them
+                 # -> the resulting system should be COM-free
+diff --git a/inpaint.py b/inpaint.py
+index 8f234bc..e158f1b 100644
+--- a/inpaint.py
++++ b/inpaint.py
+@@ -1,4 +1,5 @@
+ import argparse
++import os
+ from pathlib import Path
+ 
+ import numpy as np
+@@ -63,7 +64,9 @@ def prepare_substructure(ref_ligand, fix_atoms, pdb_model):
+ def inpaint_ligand(model, pdb_file, n_samples, ligand, fix_atoms,
+                    add_n_nodes=None, center='ligand', sanitize=False,
+                    largest_frag=False, relax_iter=0, timesteps=None,
+-                   resamplings=1, save_traj=False):
++                   resamplings=1, save_traj=False,
++                   b_cloud_raw=None, lambda_global=0.0,
++                   guide_r=1.7, guide_clip=1.0):
+     """
+     Generate ligands given a pocket
+     Args:
+@@ -146,7 +149,9 @@ def inpaint_ligand(model, pdb_file, n_samples, ligand, fix_atoms,
+     # Run sampling
+     xh_lig, xh_pocket, lig_mask, pocket_mask = model.ddpm.inpaint(
+         ligand, pocket, lig_fixed, center=center,
+-        resamplings=resamplings, timesteps=timesteps, return_frames=frames)
++        resamplings=resamplings, timesteps=timesteps, return_frames=frames,
++        b_cloud_raw=b_cloud_raw, lambda_global=lambda_global,
++        guide_r_raw=guide_r, guide_clip_raw=guide_clip)
+ 
+     # Treat intermediate states as molecules for downstream processing
+     if save_traj:
+@@ -172,10 +177,61 @@ def inpaint_ligand(model, pdb_file, n_samples, ligand, fix_atoms,
+     # Build mol objects
+     x = xh_lig[:, :model.x_dims].detach().cpu()
+     atom_type = xh_lig[:, model.x_dims:].argmax(1).detach().cpu()
++    lig_mask_cpu = lig_mask.detach().cpu()
++
++    # Optional raw fixed-block diagnostic for controlled Phase 0 validation.
++    # This is evaluated before RDKit molecule reconstruction, so atom order is exact:
++    # the fixed atoms occupy the first n_fixed ligand nodes for each generated sample.
++    debug_fixed_path = os.environ.get("DC_DEBUG_FIXED_RAW", "")
++    if debug_fixed_path:
++        ref_fixed = x_fixed.detach().cpu()
++        grouped_x = utils.batch_to_list(x, lig_mask_cpu)
++        grouped_atom_type = utils.batch_to_list(atom_type, lig_mask_cpu)
++
++        with open(debug_fixed_path, "w") as debug_f:
++            debug_f.write(
++                "sample\tn_nodes\tn_fixed\tfixed_rmsd_direct_A\t"
++                "fixed_atom_types_first_block\tref_fixed_xyz\tgen_fixed_xyz\n"
++            )
++
++            for debug_i, (sample_x, sample_atom_type) in enumerate(
++                zip(grouped_x, grouped_atom_type), start=1
++            ):
++                gen_fixed = sample_x[:n_fixed]
++
++                if len(gen_fixed) != len(ref_fixed):
++                    rmsd = float("nan")
++                else:
++                    rmsd = torch.sqrt(((gen_fixed - ref_fixed) ** 2).sum(dim=1).mean()).item()
++
++                atom_types_first = ",".join(
++                    str(int(v)) for v in sample_atom_type[:n_fixed].detach().cpu().tolist()
++                )
++
++                ref_xyz = ";".join(
++                    "{:.4f},{:.4f},{:.4f}".format(*row.tolist())
++                    for row in ref_fixed
++                )
++                gen_xyz = ";".join(
++                    "{:.4f},{:.4f},{:.4f}".format(*row.tolist())
++                    for row in gen_fixed.detach().cpu()
++                )
++
++                debug_f.write(
++                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
++                        debug_i,
++                        len(sample_x),
++                        n_fixed,
++                        rmsd,
++                        atom_types_first,
++                        ref_xyz,
++                        gen_xyz,
++                    )
++                )
+ 
+     molecules = []
+-    for mol_pc in zip(utils.batch_to_list(x, lig_mask),
+-                      utils.batch_to_list(atom_type, lig_mask)):
++    for mol_pc in zip(utils.batch_to_list(x, lig_mask_cpu),
++                      utils.batch_to_list(atom_type, lig_mask_cpu)):
+ 
+         mol = build_molecule(*mol_pc, model.dataset_info, add_coords=True)
+         mol = process_molecule(mol,
+@@ -205,6 +261,16 @@ if __name__ == "__main__":
+     parser.add_argument('--resamplings', type=int, default=20)
+     parser.add_argument('--timesteps', type=int, default=50)
+     parser.add_argument('--save_traj', action='store_true')
++    # --- Global B-shape guidance (option 2a) ---
++    parser.add_argument('--b_shape_ligand', type=str, default=None,
++                        help='SDF of reference molecule B whose 3D shape is imitated. '
++                             'Must be in the SAME coordinate frame as the pocket/A.')
++    parser.add_argument('--lambda_global', type=float, default=0.0,
++                        help='Global B-shape guidance strength. 0.0 = inert (baseline).')
++    parser.add_argument('--guide_r', type=float, default=1.7,
++                        help='Effective B atom radius (Angstrom) for the protrusion guide.')
++    parser.add_argument('--guide_clip', type=float, default=1.0,
++                        help='Max per-step guide displacement (Angstrom).')
+     args = parser.parse_args()
+ 
+     pdb_id = Path(args.pdbfile).stem
+@@ -216,6 +282,42 @@ if __name__ == "__main__":
+         args.checkpoint, map_location=device)
+     model = model.to(device)
+ 
++    # --- Load B shape cloud (heavy atoms only), if guidance requested ---
++    b_cloud_raw = None
++    if args.b_shape_ligand is not None:
++        _bmol = Chem.MolFromMolFile(args.b_shape_ligand, sanitize=False,
++                                    removeHs=False)
++        if _bmol is None:
++            raise SystemExit(f"Could not read B shape ligand: {args.b_shape_ligand}")
++        _bconf = _bmol.GetConformer()
++        _bpts = [list(_bconf.GetAtomPosition(a.GetIdx()))
++                 for a in _bmol.GetAtoms() if a.GetAtomicNum() > 1]
++        b_cloud_raw = torch.tensor(_bpts, dtype=FLOAT_TYPE)
++
++        # Soft frame check: B must share the crystal frame with the pocket/A.
++        # Compare B centroid to the reference ligand (A) centroid. For the
++        # validated x0874->x1093 pair this is ~2.52 A; a mis-aligned crystal
++        # would be tens to hundreds of A and is caught here before generation.
++        try:
++            _amol = Chem.MolFromMolFile(args.ref_ligand, sanitize=False,
++                                        removeHs=False)
++            if _amol is not None:
++                _aconf = _amol.GetConformer()
++                _apts = [list(_aconf.GetAtomPosition(a.GetIdx()))
++                         for a in _amol.GetAtoms() if a.GetAtomicNum() > 1]
++                _ac = np.array(_apts).mean(0)
++                _bc = b_cloud_raw.numpy().mean(0)
++                _d = float(np.linalg.norm(_ac - _bc))
++                print(f"[global-guidance] A-B centroid distance: {_d:.3f} A")
++                assert _d < 10.0, (
++                    f"B centroid is {_d:.1f} A from A; B is likely NOT in the "
++                    f"same crystal frame as A/pocket. Aborting before generation.")
++        except (OSError, ValueError):
++            # ref_ligand may be a chain:resi spec, not an SDF path; skip soft
++            # check in that case (frame still handled internally via mean_known).
++            print("[global-guidance] ref_ligand not an SDF path; "
++                  "skipping A-B centroid soft check.")
++
+     molecules = inpaint_ligand(model, args.pdbfile, args.n_samples,
+                                args.ref_ligand, args.fix_atoms,
+                                args.add_n_nodes, center=args.center,
+@@ -224,7 +326,11 @@ if __name__ == "__main__":
+                                relax_iter=(200 if args.relax else 0),
+                                timesteps=args.timesteps,
+                                resamplings=args.resamplings,
+-                               save_traj=args.save_traj)
++                               save_traj=args.save_traj,
++                               b_cloud_raw=b_cloud_raw,
++                               lambda_global=args.lambda_global,
++                               guide_r=args.guide_r,
++                               guide_clip=args.guide_clip)
+ 
+     # Make SDF files
+     utils.write_sdf_file(args.outfile, molecules)

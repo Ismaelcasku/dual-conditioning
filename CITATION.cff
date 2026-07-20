@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Please cite this archived software release."
+title: "Directed staged growth under shape-guided 3D diffusion: code and connectivity-aware analysis"
+type: software
+authors:
+  - family-names: "Castañón"
+    given-names: "Ismael"
+    affiliation: "University of Stavanger"
+version: 2.0.0
+date-released: 2026-07-20
+repository-code: "https://github.com/Ismaelcasku/dual-conditioning"
+license: MIT
+# Software archive DOI. After you publish the NEW version on Zenodo,
+# replace this with the new version DOI (or the all-versions concept DOI).
+doi: "10.5281/zenodo.21206298"

@@ -1,0 +1,89 @@
+diff --git a/lightning_modules.py b/lightning_modules.py
+index 9c10293..100abe7 100644
+--- a/lightning_modules.py
++++ b/lightning_modules.py
+@@ -9,10 +9,63 @@ import torch
+ import torch.nn.functional as F
+ from torch.utils.data import DataLoader
+ import pytorch_lightning as pl
+-import wandb
++try:
++    import wandb
++except ImportError:
++    class _WandbNoOpRun:
++        config = {}
++
++        def log(self, *args, **kwargs):
++            return None
++
++        def finish(self, *args, **kwargs):
++            return None
++
++        def watch(self, *args, **kwargs):
++            return None
++
++    class _WandbNoOp:
++        run = _WandbNoOpRun()
++        config = {}
++
++        def init(self, *args, **kwargs):
++            self.run = _WandbNoOpRun()
++            return self.run
++
++        def log(self, *args, **kwargs):
++            return None
++
++        def finish(self, *args, **kwargs):
++            return None
++
++        def watch(self, *args, **kwargs):
++            return None
++
++        def save(self, *args, **kwargs):
++            return None
++
++        def define_metric(self, *args, **kwargs):
++            return None
++
++    wandb = _WandbNoOp()
+ from torch_scatter import scatter_add, scatter_mean
+ from Bio.PDB import PDBParser
+-from Bio.PDB.Polypeptide import three_to_one
++try:
++    from Bio.PDB.Polypeptide import three_to_one
++except ImportError:
++    _THREE_TO_ONE = {
++        "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C",
++        "GLN": "Q", "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I",
++        "LEU": "L", "LYS": "K", "MET": "M", "PHE": "F", "PRO": "P",
++        "SER": "S", "THR": "T", "TRP": "W", "TYR": "Y", "VAL": "V",
++        "MSE": "M",
++    }
++
++    def three_to_one(resname):
++        key = str(resname).strip().upper()
++        if key in _THREE_TO_ONE:
++            return _THREE_TO_ONE[key]
++        raise KeyError("Unknown residue name: {}".format(resname))
+ 
+ from constants import dataset_params, FLOAT_TYPE, INT_TYPE
+ from equivariant_diffusion.dynamics import EGNNDynamics
+@@ -21,7 +74,17 @@ from equivariant_diffusion.conditional_model import ConditionalDDPM, \
+     SimpleConditionalDDPM
+ from dataset import ProcessedLigandPocketDataset
+ import utils
+-from analysis.visualization import save_xyz_file, visualize, visualize_chain
++try:
++    from analysis.visualization import save_xyz_file, visualize, visualize_chain
++except ImportError:
++    def save_xyz_file(*args, **kwargs):
++        return None
++
++    def visualize(*args, **kwargs):
++        return None
++
++    def visualize_chain(*args, **kwargs):
++        return None
+ from analysis.metrics import BasicMolecularMetrics, CategoricalDistribution, \
+     MoleculeProperties
+ from analysis.molecule_builder import build_molecule, process_molecule

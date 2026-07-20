@@ -1,0 +1,21 @@
+# CPU-only environment for Level-A reproduction: regenerate all figures and
+# re-run the statistical analysis from the derived TSVs, without a GPU and
+# without the generative model. This is all a reviewer needs to verify the
+# figures and the numbers in the tables.
+#
+# rdkit is pinned exact because it recomputes shape metrics; scipy is pinned
+# exact because it computes the Mann-Whitney p-values in the tables.
+
+name: dual-conditioning-cpu
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10.13
+  - pip=24.*
+  - numpy=1.26.4
+  - scipy=1.15.3
+  - pandas=2.3.1
+  - pip:
+      - rdkit==2025.9.6
+      - matplotlib==3.10.8
