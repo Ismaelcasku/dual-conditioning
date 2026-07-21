@@ -9,6 +9,6 @@
   "keywords": ["3D molecular diffusion", "DiffSBDD", "structure-based drug design", "shape guidance", "SARS-CoV-2 Mpro", "fragment growing"],
   "related_identifiers": [
     { "identifier": "https://github.com/Ismaelcasku/dual-conditioning", "relation": "isSupplementTo", "scheme": "url" },
-    { "identifier": "10.5281/zenodo.21204994", "relation": "isSupplementedBy", "scheme": "doi" }
+    { "identifier": "10.5281/zenodo.21468756", "relation": "isSupplementedBy", "scheme": "doi" }
   ]
 }
